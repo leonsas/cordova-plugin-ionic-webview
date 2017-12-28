@@ -124,12 +124,14 @@
         }
         self.frame = frame;
         [GCDWebServer setLogLevel: kGCDWebServerLoggingLevel_Warning];
+        NSLog(@"CDVWKWebViewEngine#initWithFrame initing with AutomaticallySuspendInBackground disabled");
         self.webServer = [[GCDWebServer alloc] init];
         [self.webServer addGETHandlerForBasePath:@"/" directoryPath:@"/" indexFilename:nil cacheAge:3600 allowRangeRequests:YES];
         NSDictionary *options = @{
                                   GCDWebServerOption_Port: @(8080),
                                   GCDWebServerOption_BindToLocalhost: @(YES),
-                                  GCDWebServerOption_ServerName: @"Ionic"
+                                  GCDWebServerOption_ServerName: @"Ionic",
+                                  GCDWebServerOption_AutomaticallySuspendInBackground: @(NO)
                                   };
         [self.webServer startWithOptions:options error:nil];
     }
