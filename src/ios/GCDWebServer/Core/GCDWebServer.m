@@ -1,7 +1,7 @@
 /*
  Copyright (c) 2012-2015, Pierre-Olivier Latour
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  * The name of Pierre-Olivier Latour may not be used to endorse
  or promote products derived from this software without specific
  prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -629,7 +629,7 @@ static inline NSString* _EncodeBase64(NSString* string) {
 
   dispatch_resume(_source4);
   dispatch_resume(_source6);
-  GWS_LOG_INFO(@"%@ started on port %i and reachable at %@", [self class], (int)_port, self.serverURL);
+  NSLog(@"%@ started on port %i and reachable at %@", [self class], (int)_port, self.serverURL);
   if ([_delegate respondsToSelector:@selector(webServerDidStart:)]) {
     dispatch_async(dispatch_get_main_queue(), ^{
       [_delegate webServerDidStart:self];
@@ -742,12 +742,13 @@ static inline NSString* _EncodeBase64(NSString* string) {
       _options = nil;
       return NO;
     }
-#if TARGET_OS_IPHONE
-    if (_suspendInBackground) {
-      [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+  #if TARGET_OS_IPHONE
+      NSLog(@"GCDWebServer-patch: Registering the _willEnterForeground observer even without the suspendInBackground");
       [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_willEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
-    }
-#endif
+      if (_suspendInBackground) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+      }
+  #endif
     return YES;
   } else {
     GWS_DNOT_REACHED();
