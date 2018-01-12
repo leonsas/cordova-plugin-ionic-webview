@@ -125,8 +125,9 @@
         self.frame = frame;
         [GCDWebServer setLogLevel: kGCDWebServerLoggingLevel_Warning];
         NSLog(@"CDVWKWebViewEngine#initWithFrame initing with AutomaticallySuspendInBackground disabled");
+        NSLog(@"CDVWKWebViewEngine#initWithFrame-patch cacheAge set to 259200");
         self.webServer = [[GCDWebServer alloc] init];
-        [self.webServer addGETHandlerForBasePath:@"/" directoryPath:@"/" indexFilename:nil cacheAge:3600 allowRangeRequests:YES];
+        [self.webServer addGETHandlerForBasePath:@"/" directoryPath:@"/" indexFilename:nil cacheAge:259200 allowRangeRequests:YES];
         NSDictionary *options = @{
                                   GCDWebServerOption_Port: @(8080),
                                   GCDWebServerOption_BindToLocalhost: @(YES),
@@ -138,7 +139,6 @@
 
     return self;
 }
-
 - (WKWebViewConfiguration*) createConfigurationFromSettings:(NSDictionary*)settings
 {
     WKWebViewConfiguration* configuration = [[WKWebViewConfiguration alloc] init];
@@ -294,10 +294,29 @@ static void * KVOContext = &KVOContext;
 }
 
 - (void)onAppWillEnterForeground:(NSNotification *)notification {
+    NSLog(@"CDVWKWebViewEngine-patch onApp`WillEnterForeground: We have the webview reload codebase");
+    NSLog(@"CDVWKWebViewEngine-patch: onAppWillEnterForeground. webServer isRunning: %d", [self.webServer isRunning]);
+    if (![self.webServer isRunning]){
+        NSLog(@"CDVWKWebViewEngine-patch: webServer is not running, will start with options and re-setting GET handler, with cacheAge=259200");
+        self.webServer = [[GCDWebServer alloc] init];
+        [self.webServer addGETHandlerForBasePath:@"/" directoryPath:@"/" indexFilename:nil cacheAge:259200 allowRangeRequests:YES];
+        NSDictionary *options = @{
+                                  GCDWebServerOption_Port: @(8080),
+                                  GCDWebServerOption_BindToLocalhost: @(YES),
+                                  GCDWebServerOption_ServerName: @"Ionic",
+                                  GCDWebServerOption_AutomaticallySuspendInBackground: @(NO)
+                                  };
+        [self.webServer startWithOptions:options error:nil];
+        NSLog(@"CDVWKWebViewEngine-patch: forcing webview reload");
+        [(WKWebView*)_engineWebView reload];
+    }
+
     if ([self shouldReloadWebView]) {
         NSLog(@"%@", @"CDVWKWebViewEngine reloading!");
         [(WKWebView*)_engineWebView reload];
     }
+
+
 }
 
 - (BOOL)shouldReloadWebView
@@ -583,6 +602,7 @@ static void * KVOContext = &KVOContext;
 
     NSString* message = [NSString stringWithFormat:@"Failed to load webpage with error: %@", [error localizedDescription]];
     NSLog(@"%@", message);
+    NSLog(@"CDVWKWebViewEngine-patch: %@", [[theWebView URL] absoluteString]);
 
     NSURL* errorUrl = vc.errorURL;
     if (errorUrl) {
